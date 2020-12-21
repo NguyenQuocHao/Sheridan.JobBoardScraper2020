@@ -1,21 +1,21 @@
+# Original work Copyright (c) 2020 [Hao Nguyen]
+
 import openpyxl
 from bs4 import BeautifulSoup
 from pathlib import Path
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import time
-import logging
 
-#Getting things ready!!
+# Getting things ready!!
 
-#from webdriver_manager.chrome import ChromeDriverManager
-#driver = webdriver.Chrome(ChromeDriverManager().install())
+# from webdriver_manager.chrome import ChromeDriverManager
+# driver = webdriver.Chrome(ChromeDriverManager().install())
 browser = webdriver.Chrome()
 browser.get('https://jobs.sheridancollege.ca/Student/Default.asp#Content')
-time.sleep(1)   #Sleep to wait for the browser to load the content
+time.sleep(1)  # Sleep to wait for the browser to load the content
 
-
-## fill in login info
+# Fill in login info.
 # Account
 userElem = browser.find_element_by_id('user')
 userElem.send_keys("")  # Put your studentID in ""
@@ -29,9 +29,9 @@ passwordElem.send_keys(Keys.ENTER)
 linkElem = browser.find_element_by_link_text('Job Postings')
 linkElem.click()
 
-#Check if excel file exists, if not create one
+# Check if excel file exists, if not create one
 FileExistence = Path('sheridan_job_board_fall_2020.xlsx')
-if (FileExistence.is_file()):
+if FileExistence.is_file:
     wb = openpyxl.load_workbook('sheridan_job_board_fall_2020.xlsx')
 else:
     wb = openpyxl.Workbook()  # Create a blank workbook.
@@ -53,36 +53,35 @@ sheet.cell(row=1, column=12).value = "Salary"
 sheet.cell(row=1, column=13).value = "Compensation"
 sheet.cell(row=1, column=14).value = "Description"
 
-
-#Get job board table content
-soup = BeautifulSoup(browser.page_source, 'lxml')   #load page content
+# Get job board table content
+soup = BeautifulSoup(browser.page_source, 'lxml')  # load page content
 My_table = soup.find('table', {'class': 'table table-bordered'})
-findTd = My_table.findAll('td') #scan through table, and store all 'td' elems into an array
-count = 0 #Number of moves (cell to cell)
-countX = 1  #Column
-countY = 1  #Row
+findTd = My_table.findAll('td')  # scan through table, and store all 'td' elems into an array
+count = 0  # Number of moves (cell to cell)
+countX = 1  # Column
+countY = 1  # Row
 
-## first page
+# first page
 for i in findTd:
-    # copy salary & compen
+    # copy salary & compensation
     if count % 11 == 0:
         id = i.text.replace('\n', '').strip()
         print('                ' + id)
         locator = browser.find_element_by_link_text(id)
         locator.click()
-        soup = BeautifulSoup(browser.page_source, 'lxml')    # update buffered link to current link
+        soup = BeautifulSoup(browser.page_source, 'lxml')  # update buffered link to current link
         My_Salary = soup.find('div', {'id': 'jd9'})
-        My_Compen = soup.find('div', {'id': 'jd10'})
+        My_Compensation = soup.find('div', {'id': 'jd10'})
         My_Description = soup.find('div', {'id': 'jobd1'})
-        if My_Salary != None:
+        if My_Salary is not None:
             findSalary = My_Salary.findAll('p')[0].text.replace('\n', '').strip()
             print("sal :" + findSalary)
             sheet.cell(row=countY + 1, column=12).value = findSalary
-        if My_Compen != None:
-            findCompen = My_Compen.findAll('p')[0].text.replace('\n', '').strip()
-            print("pen :" + findCompen)
-            sheet.cell(row=countY + 1, column=13).value = findCompen
-        if My_Description != None:
+        if My_Compensation is not None:
+            findCompensation = My_Compensation.findAll('p')[0].text.replace('\n', '').strip()
+            print("pen :" + findCompensation)
+            sheet.cell(row=countY + 1, column=13).value = findCompensation
+        if My_Description is not None:
             findDescr = My_Description.findAll('p')[0].text  # .replace('\n', '').strip()
             print("des :" + findDescr)
             sheet.cell(row=countY + 1, column=14).value = findDescr
@@ -99,11 +98,11 @@ for i in findTd:
         countX += 1
     count += 1
 
-## later pages
-for iter in range(0, 17):
+# later pages.
+for page in range(0, 17):
     linkElem = browser.find_element_by_link_text('Next')
     linkElem.click()
-    soup = BeautifulSoup(browser.page_source, 'lxml')     # update buffered link to current link
+    soup = BeautifulSoup(browser.page_source, 'lxml')  # update buffered link to current link
     My_table = soup.find('table', {'class': 'table table-bordered'})
     findTd = My_table.findAll('td')
     for i in findTd:
@@ -125,35 +124,29 @@ for iter in range(0, 17):
             locator.click()
             soup = BeautifulSoup(browser.page_source, 'lxml')
             My_Salary = soup.find('div', {'id': 'jd9'})
-            My_Compen = soup.find('div', {'id': 'jd10'})
+            My_Compensation = soup.find('div', {'id': 'jd10'})
             My_Description = soup.find('div', {'id': 'jobd1'})
-            if My_Salary != None:
+            if My_Salary is not None:
                 findSalary = My_Salary.findAll('p')[0].text.replace('\n', '').strip()
                 print("sal :" + findSalary)
                 sheet.cell(row=countY, column=12).value = findSalary
-            if My_Compen != None:
-                findCompen = My_Compen.findAll('p')[0].text.replace('\n', '').strip()
-                print("pen :" + findCompen)
-                sheet.cell(row=countY, column=13).value = findCompen
-            #Get Description
-            if My_Description != None:
-                findDescr = My_Description.findAll('p')[0].text#.replace('\n', '').strip()
+            if My_Compensation is not None:
+                findCompensation = My_Compensation.findAll('p')[0].text.replace('\n', '').strip()
+                print("pen :" + findCompensation)
+                sheet.cell(row=countY, column=13).value = findCompensation
+            # Get Description
+            if My_Description is not None:
+                findDescr = My_Description.findAll('p')[0].text  # .replace('\n', '').strip()
                 print("des :" + findDescr)
                 sheet.cell(row=countY, column=14).value = findDescr
             browser.back()
         count += 1
 
-
-
-#Write (save) the excel file into the drive
+# Write (save) the excel file into the drive
 wb.save('sheridan_job_board_fall_2020.xlsx')
-
-
-
 
 """
 @To-do:
 - Add excep handling (user wrong input)
 - Uhh... update code efficiency?
 """
-# Original work Copyright (c) 2020 [Hao Nguyen]
