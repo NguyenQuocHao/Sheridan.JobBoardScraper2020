@@ -38,27 +38,36 @@ else:
 sheet = wb.active
 
 # Set headers for table
-sheet.cell(row=1, column=1).value = "Job Number"
-sheet.cell(row=1, column=2).value = "Employer"
-sheet.cell(row=1, column=3).value = "Job Title"
-sheet.cell(row=1, column=4).value = "Status"
-sheet.cell(row=1, column=5).value = "Job Type"
-sheet.cell(row=1, column=6).value = "Job Sub-Type"
-sheet.cell(row=1, column=7).value = "City"
-sheet.cell(row=1, column=8).value = "Positions"
-sheet.cell(row=1, column=9).value = "Months"
-sheet.cell(row=1, column=10).value = "Posting Date"
-sheet.cell(row=1, column=11).value = "Closing Date"
-sheet.cell(row=1, column=12).value = "Salary"
-sheet.cell(row=1, column=13).value = "Compensation"
-sheet.cell(row=1, column=14).value = "Description"
+header_list = [
+    "Job Number",
+    "Employer",
+    "Job Title",
+    "Status",
+    "Job Type",
+    "Job Sub-Type",
+    "City",
+    "Positions",
+    "Months",
+    "Posting Date",
+    "Closing Date",
+    "Salary",
+    "Compensation",
+    "Description"
+]
 
 count = 0  # Number of moves (cell to cell)
 countX = 1  # Column
 countY = 2  # Row
 
-# Get job board table content
 
+def create_headers(sheet, headers):
+    column = 1
+    for header in headers:
+        sheet.cell(row=1, column=column).value = header
+        column += 1
+
+
+# Get job board table content
 def collect_job_postings():
     soup = BeautifulSoup(browser.page_source, 'lxml')  # load page content
     My_table = soup.find('table', {'class': 'table table-bordered'})
@@ -69,37 +78,42 @@ def collect_job_postings():
         global countY
         # copy salary & compensation
         if count % 11 == 0:  # execute if first cell
-             sheet.cell(row=countY, column=countX).value = job_id = i.text.replace('\n', '').strip()
-             locator = browser.find_element_by_link_text(job_id)
-             locator.click()
-             soup = BeautifulSoup(browser.page_source, 'lxml')  # update buffered link to current link
-             My_Salary = soup.find('div', {'id': 'jd9'})
-             My_Compensation = soup.find('div', {'id': 'jd10'})
-             My_Description = soup.find('div', {'id': 'jobd1'})
-             if My_Salary is not None:
-                 findSalary = My_Salary.findAll('p')[0].text.replace('\n', '').strip()
-                 sheet.cell(row=countY, column=12).value = findSalary
-             if My_Compensation is not None:
-                 findCompensation = My_Compensation.findAll('p')[0].text.replace('\n', '').strip()
-                 sheet.cell(row=countY, column=13).value = findCompensation
-             if My_Description is not None:
-                 findDescription = My_Description.findAll('p')[0].text.replace('\n', '').strip()
-                 sheet.cell(row=countY, column=14).value = findDescription
-             browser.back()
+            sheet.cell(row=countY, column=countX).value = job_id = i.text.replace('\n', '').strip()
+            locator = browser.find_element_by_link_text(job_id)
+            locator.click()
+            soup = BeautifulSoup(browser.page_source, 'lxml')  # update buffered link to current link
+            My_Salary = soup.find('div', {'id': 'jd9'})
+            My_Compensation = soup.find('div', {'id': 'jd10'})
+            My_Description = soup.find('div', {'id': 'jobd1'})
+            if My_Salary is not None:
+                findSalary = My_Salary.findAll('p')[0].text.replace('\n', '').strip()
+                sheet.cell(row=countY, column=12).value = findSalary
+            if My_Compensation is not None:
+                findCompensation = My_Compensation.findAll('p')[0].text.replace('\n', '').strip()
+                sheet.cell(row=countY, column=13).value = findCompensation
+            if My_Description is not None:
+                findDescription = My_Description.findAll('p')[0].text.replace('\n', '').strip()
+                sheet.cell(row=countY, column=14).value = findDescription
+            browser.back()
 
         elif count % 11 != 0:  # execute if not first cell
-             sheet.cell(row=countY, column=countX).value = i.text.replace('\n', '').strip()
-             # Check if the last cell
-             if count % 11 == 10:
-                 countY += 1
-                 countX = 0
+            sheet.cell(row=countY, column=countX).value = i.text.replace('\n', '').strip()
+            # Check if the last cell
+            if count % 11 == 10:
+                countY += 1
+                countX = 0
 
         # Increment anyways
         countX += 1
         count += 1
 
+
+# Create headers for the table
+create_headers(sheet, header_list)
+
 # first page
 collect_job_postings()
+
 # later pages.
 for page in range(0, 11):
     linkElem = browser.find_element_by_link_text('Next')
@@ -108,5 +122,3 @@ for page in range(0, 11):
 
 # Write (save) the excel file into the drive
 wb.save('sheridan_job_board_fall_2020.xlsx')
-
-
