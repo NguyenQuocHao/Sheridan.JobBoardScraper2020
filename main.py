@@ -71,9 +71,10 @@ def create_headers(sheet, headers):
 # Get job board table content
 def collect_job_postings():
     soup = BeautifulSoup(browser.page_source, 'lxml')  # load page content
-    My_table = soup.find('table', {'class': 'table table-bordered'})
-    findTd = My_table.findAll('td')  # scan through table, and store all 'td' elems into an array
-    for i in findTd:
+    my_table = soup.find('table', {'class': 'table table-bordered'})
+    find_td = my_table.find_all('td')  # scan through table, and store all 'td' elements into an array
+    my_table.find_all_next()
+    for i in find_td:
         global count
         global countX
         global countY
@@ -83,18 +84,18 @@ def collect_job_postings():
             locator = browser.find_element_by_link_text(job_id)
             locator.click()
             soup = BeautifulSoup(browser.page_source, 'lxml')  # update buffered link to current link
-            My_Salary = soup.find('div', {'id': 'jd9'})
-            My_Compensation = soup.find('div', {'id': 'jd10'})
-            My_Description = soup.find('div', {'id': 'jobd1'})
-            if My_Salary is not None:
-                findSalary = My_Salary.findAll('p')[0].text.replace('\n', '').strip()
-                sheet.cell(row=countY, column=12).value = findSalary
-            if My_Compensation is not None:
-                findCompensation = My_Compensation.findAll('p')[0].text.replace('\n', '').strip()
-                sheet.cell(row=countY, column=13).value = findCompensation
-            if My_Description is not None:
-                findDescription = My_Description.findAll('p')[0].text.replace('\n', '').strip()
-                sheet.cell(row=countY, column=14).value = findDescription
+            my_salary = soup.find('div', {'id': 'jd9'})
+            my_compensation = soup.find('div', {'id': 'jd10'})
+            my_description = soup.find('div', {'id': 'jobd1'})
+            if my_salary is not None:
+                find_salary = my_salary.find_all('p')[0].text.replace('\n', '').strip()
+                sheet.cell(row=countY, column=12).value = find_salary
+            if my_compensation is not None:
+                find_compensation = my_compensation.find_all('p')[0].text.replace('\n', '').strip()
+                sheet.cell(row=countY, column=13).value = find_compensation
+            if my_description is not None:
+                find_description = my_description.find_all('p')[0].text.replace('\n', '').strip()
+                sheet.cell(row=countY, column=14).value = find_description
             browser.back()
 
         elif count % 11 != 0:  # execute if not first cell
@@ -117,6 +118,7 @@ collect_job_postings()
 
 # later pages.
 for page in range(0, 11):
+    # Go to the next page
     linkElem = browser.find_element_by_link_text('Next')
     linkElem.click()
     collect_job_postings()
