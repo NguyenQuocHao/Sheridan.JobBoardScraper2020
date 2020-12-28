@@ -9,6 +9,15 @@ import time
 
 # Getting things ready!!
 
+# Check if excel file exists, if not create one
+file_name = 'sheridan_job_board_fall_2020_v1.xlsx'
+FileExistence = Path(file_name)
+if FileExistence.is_file():
+    wb = openpyxl.load_workbook(file_name)
+else:
+    wb = openpyxl.Workbook()  # Create a blank workbook.
+sheet = wb.active
+
 # from webdriver_manager.chrome import ChromeDriverManager
 # driver = webdriver.Chrome(ChromeDriverManager().install())
 browser = webdriver.Chrome()
@@ -28,14 +37,6 @@ passwordElem.send_keys(Keys.ENTER)
 # Navigate to Job board tab
 linkElem = browser.find_element_by_link_text('Job Postings')
 linkElem.click()
-
-# Check if excel file exists, if not create one
-FileExistence = Path('sheridan_job_board_fall_2020.xlsx')
-if FileExistence.is_file():
-    wb = openpyxl.load_workbook('sheridan_job_board_fall_2020.xlsx')
-else:
-    wb = openpyxl.Workbook()  # Create a blank workbook.
-sheet = wb.active
 
 # Set headers for table
 header_list = [
@@ -121,4 +122,4 @@ for page in range(0, 11):
     collect_job_postings()
 
 # Write (save) the excel file into the drive
-wb.save('sheridan_job_board_fall_2020.xlsx')
+wb.save(file_name)
