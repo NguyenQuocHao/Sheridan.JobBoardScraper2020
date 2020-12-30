@@ -10,7 +10,7 @@ import time
 # Getting things ready!!
 
 # Check if excel file exists, if not create one
-file_name = 'sheridan_job_board_fall_2020_v1.xlsx'
+file_name = 'sheridan_job_board_fall_2020_v3.xlsx'
 FileExistence = Path(file_name)
 if FileExistence.is_file():
     wb = openpyxl.load_workbook(file_name)
@@ -56,9 +56,11 @@ header_list = [
     "Description"
 ]
 
+last_page_exception_message = "Reached last page."
 count = 0  # Number of moves (cell to cell)
 countX = 1  # Column
 countY = 2  # Row
+job_id_top = ''
 
 
 def create_headers(sheet, headers):
@@ -72,16 +74,27 @@ def create_headers(sheet, headers):
 def collect_job_postings():
     soup = BeautifulSoup(browser.page_source, 'lxml')  # load page content
     my_table = soup.find('table', {'class': 'table table-bordered'})
-    find_td = my_table.find_all('td')  # scan through table, and store all 'td' elements into an array
-    my_table.find_all_next()
-    for i in find_td:
+    found_tds = my_table.find_all('td')  # scan through table, and store all 'td' elements into an array
+    global job_id_top
+    for found_td in found_tds:
         global count
         global countX
         global countY
+        global last_page_exception_message
         # copy salary & compensation
         if count % 11 == 0:  # execute if first cell
-            sheet.cell(row=countY, column=countX).value = job_id = i.text.replace('\n', '').strip()
+            job_id = found_td.text.replace('\n', '').strip()
             locator = browser.find_element_by_link_text(job_id)
+
+            # if next page is the previous page -> escape and throw exception
+            if job_id_top == job_id:
+                raise Exception(last_page_exception_message)
+
+            # assign job id at the top
+            if (countY - 2) % 20 == 0:
+                job_id_top = job_id
+
+            sheet.cell(row=countY, column=countX).value = job_id
             locator.click()
             soup = BeautifulSoup(browser.page_source, 'lxml')  # update buffered link to current link
             my_salary = soup.find('div', {'id': 'jd9'})
@@ -99,7 +112,7 @@ def collect_job_postings():
             browser.back()
 
         elif count % 11 != 0:  # execute if not first cell
-            sheet.cell(row=countY, column=countX).value = i.text.replace('\n', '').strip()
+            sheet.cell(row=countY, column=countX).value = found_td.text.replace('\n', '').strip()
             # Check if the last cell
             if count % 11 == 10:
                 countY += 1
@@ -113,15 +126,17 @@ def collect_job_postings():
 # Create headers for the table
 create_headers(sheet, header_list)
 
-# first page
-collect_job_postings()
-
-# later pages.
-for page in range(0, 11):
+# loop through pages
+for page in range(0, 100):
+    try:
+        collect_job_postings()
+    except Exception as error:
+        if str(error) == last_page_exception_message:
+            break
     # Go to the next page
     linkElem = browser.find_element_by_link_text('Next')
     linkElem.click()
-    collect_job_postings()
+
 
 # Write (save) the excel file into the drive
 wb.save(file_name)
